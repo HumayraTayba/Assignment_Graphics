@@ -1,0 +1,172 @@
+#include <iostream>
+#include <GL/glut.h>
+#include <cmath>
+using namespace std;
+
+int centerX = 250;
+int centerY = 300;
+int numCircles = 5;      // concentric circles
+int startRadius = 40;    // radius of innermost circle
+int radiusStep = 20;     // each next circle size 
+int thicknessPx = 4;     // thickness of each circle ring 
+
+// color: innerColor -> outerColor
+float innerR = 1.0f, innerG = 0.0f, innerB = 0.0f; // red
+float outerR = 0.0f, outerG = 0.0f, outerB = 1.0f; // blue
+
+void plotPoint(int x, int y) {
+    glVertex2i(x, y);
+}
+
+// 8 symmetric octant points for a circle
+void plotCircleOctants(int cx, int cy, int x, int y) {
+    plotPoint(cx + x, cy + y);
+    plotPoint(cx - x, cy + y);
+    plotPoint(cx + x, cy - y);
+    plotPoint(cx - x, cy - y);
+
+    plotPoint(cx + y, cy + x);
+    plotPoint(cx - y, cy + x);
+    plotPoint(cx + y, cy - x);
+    plotPoint(cx - y, cy - x);
+}
+
+void drawCircleMidpoint(int cx, int cy, int radius) {
+    int x = 0;
+    int y = radius;
+
+    // decision parameter 
+    float d = 1.25f - radius; // same as 5/4 - r but with proper float math
+
+   
+    while (y >= x) {
+        plotCircleOctants(cx, cy, x, y);
+
+        if (d < 0) {
+            //x direction 
+            d += 2 * x + 3;
+        } else {
+            //x and y both
+            d += 2 * (x - y) + 5;
+            y--;
+        }
+        x++;
+    }
+}
+
+void drawThickCircleRing(int cx, int cy, int baseRadius, int thicknessPx) {
+    // multiple circles radius increases to look thick.
+    for (int t = 0; t < thicknessPx; t++) {
+        int thisR = baseRadius + t;
+        glBegin(GL_POINTS);
+        drawCircleMidpoint(cx, cy, thisR);
+        glEnd();
+    }
+}
+
+// tCircle 0 for innermost circle to numCircles-1 for outermost.
+void setGradientColor(int tCircle) {
+    if (numCircles <= 1) {
+        // avoid divide-by-zero: just use inner color
+        glColor3f(innerR, innerG, innerB);
+        return;
+    }
+
+    float alpha = (float)tCircle / (float)(numCircles - 1); // 0.0 -> 1.0
+
+    // linear interpolation of inner and outer
+    float R = innerR + alpha * (outerR - innerR);
+    float G = innerG + alpha * (outerG - innerG);
+    float B = innerB + alpha * (outerB - innerB);
+
+    glColor3f(R, G, B);
+}
+
+void myDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // concentric circle
+    for (int i = 0; i < numCircles; i++) {
+        int radius = startRadius + i * radiusStep;
+
+        
+        setGradientColor(i);
+
+        // point size = 1 
+        glPointSize(1.0f);
+
+        drawThickCircleRing(centerX, centerY, radius, thicknessPx);
+    }
+
+    glFlush();
+}
+
+void myInit() {
+    glClearColor(1.0, 1.0, 1.0, 0.0);
+
+        glColor3f(0.0f, 0.0f, 0.0f);
+
+    glPointSize(1.0);
+
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, 640.0, 0.0, 480.0);
+}
+
+int main(int argc, char** argv) {
+
+    cout << "Enter center X [" << centerX << "]: ";
+    {
+        int temp;
+        if (cin >> temp) centerX = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    cout << "Enter center Y [" << centerY << "]: ";
+    {
+        int temp;
+        if (cin >> temp) centerY = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    cout << "How many circles [" << numCircles << "]: ";
+    {
+        int temp;
+        if (cin >> temp) numCircles = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    cout << "Starting radius [" << startRadius << "]: ";
+    {
+        int temp;
+        if (cin >> temp) startRadius = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    cout << "Radius step between rings [" << radiusStep << "]: ";
+    {
+        int temp;
+        if (cin >> temp) radiusStep = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    cout << "Thickness (pixels) per ring [" << thicknessPx << "]: ";
+    {
+        int temp;
+        if (cin >> temp) thicknessPx = temp;
+        else { cin.clear(); cin.ignore(1000, '\n'); }
+    }
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(640, 480);
+    glutInitWindowPosition(100, 150);
+    glutCreateWindow("Concentric Circles with Gradient & Thickness");
+
+    myInit();
+    glutDisplayFunc(myDisplay);
+
+    glutMainLoop();
+    return 0;
+}

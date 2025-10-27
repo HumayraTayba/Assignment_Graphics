@@ -1,0 +1,101 @@
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+
+// global variable
+int x1_in, y1_in, x2_in, y2_in;
+
+// pixel (x, y)
+void draw_pixel(int x, int y) {
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
+    glEnd();
+}
+
+// slopes & directions
+void draw_line(int x1, int y1, int x2, int y2) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+
+    int sx = (x2 >= x1) ? 1 : -1; // for x
+    int sy = (y2 >= y1) ? 1 : -1; // for y
+
+    int x = x1;
+    int y = y1;
+
+    // Case 1: slope <= 1 for x
+    if (dx >= dy) {
+        int err = 2 * dy - dx;      // decision parameter
+        for (int i = 0; i <= dx; i++) {
+            draw_pixel(x, y);
+
+            if (err >= 0) {
+                y += sy;
+                err -= 2 * dx;
+            }
+            err += 2 * dy;
+            x += sx;
+        }
+    }
+    // Case 2: slope > 1 for y 
+    else {
+        int err = 2 * dx - dy;      
+        for (int i = 0; i <= dy; i++) {
+            draw_pixel(x, y);
+
+            if (err >= 0) {
+                x += sx;
+                err -= 2 * dy;
+            }
+            err += 2 * dx;
+            y += sy;
+        }
+    }
+}
+
+// calling Display
+void myDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Bresenham line algo
+    draw_line(x1_in, y1_in, x2_in, y2_in);
+
+    glFlush();
+}
+
+
+void myInit() {
+    glClearColor(0.0, 0.0, 0.0, 1.0); 
+    glColor3f(1.0, 1.0, 1.0);         
+    glPointSize(2.0f);                
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    
+    gluOrtho2D(0, 500, 0, 500);
+}
+
+int main(int argc, char** argv) {
+
+    // user input
+    printf("Enter (x1, y1, x2, y2): ");
+    scanf("%d %d %d %d", &x1_in, &y1_in, &x2_in, &y2_in);
+
+    
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("Bresenham's Line Drawing Algorithm");
+
+    myInit();                 
+    glutDisplayFunc(myDisplay);
+
+    glutMainLoop(); 
+    return 0;
+}
